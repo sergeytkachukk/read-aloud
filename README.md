@@ -7,7 +7,8 @@ A small Next.js and TypeScript demo. A page has a "Listen to this article" butto
 - A server route (`/api/speech`) that keeps the API key on the server and never in the browser.
 - The browser sends an article id, not free text, so the public endpoint cannot be used to voice arbitrary content with your credits. Audio is cached per article and requests are rate limited per IP.
 - A client button with clear states (idle, loading, playing, paused, error).
-- Event tracking: `listen_click`, `listen_play`, `listen_pause`, `listen_resume`, `listen_complete`, `listen_error`. Events are pushed to `window.dataLayer` (ready for Google Tag Manager or GA4) and shown live on the page.
+- Event tracking: `listen_click`, `listen_play`, `listen_pause`, `listen_resume`, `listen_complete`, `listen_error`. Events are pushed to `window.dataLayer` (ready for Google Tag Manager or GA4) and shown live on the page. Every event also carries the A/B `variant`.
+- A/B test of the button text, with a small home-made feature flag in `src/lib/experiment.ts`. Variant A says "Listen to this article". Variant B adds the listening time. The variant is random and saved in the browser. Add `?variant=A` or `?variant=B` to the address to force one. The table on the page counts only this browser. For real results, send the events to GA4 or an experiment tool such as GrowthBook.
 
 ## Run it
 
