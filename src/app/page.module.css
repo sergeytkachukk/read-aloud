@@ -1,0 +1,26 @@
+.main {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 3rem 1.25rem 4rem;
+}
+
+.kicker {
+  margin: 0 0 0.5rem;
+  color: #5b6573;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.75rem, 5vw, 2.4rem);
+  line-height: 1.2;
+}
+
+.article p {
+  margin: 0 0 1.1rem;
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
