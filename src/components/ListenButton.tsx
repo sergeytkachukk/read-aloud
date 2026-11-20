@@ -1,24 +1,63 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  EXPERIMENT_NAME,
+  getVariant,
+  recordStat,
+  type Variant,
+} from "@/lib/experiment";
 import { trackEvent } from "@/lib/track";
 import styles from "./ListenButton.module.css";
 
 type Status = "idle" | "loading" | "playing" | "paused" | "error";
 
-const LABELS: Record<Status, string> = {
-  idle: "Listen to this article",
-  loading: "Preparing audio...",
-  playing: "Pause",
-  paused: "Resume",
-  error: "Try again",
-};
+function getLabels(variant: Variant, minutes: number): Record<Status, string> {
+  return {
+    // A is the control. B is the same button with the listening time.
+    idle:
+      variant === "B" ? `Listen, ${minutes} min` : "Listen to this article",
+    loading: "Preparing audio...",
+    playing: "Pause",
+    paused: "Resume",
+    error: "Try again",
+  };
+}
 
-export default function ListenButton({ articleId }: { articleId: string }) {
+export default function ListenButton({
+  articleId,
+  minutes,
+}: {
+  articleId: string;
+  minutes: number;
+}) {
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
+  const viewedRef = useRef(false);
+  const clickedRef = useRef(false);
+
+  // null on the server, "A" or "B" in the browser.
+  const variant = useSyncExternalStore<Variant | null>(
+    () => () => {},
+    getVariant,
+    () => null,
+  );
+
+  // Every event carries the variant, so results can be split by group later.
+  const base = { article_id: articleId, variant: variant ?? "A" };
+
+  useEffect(() => {
+    if (!variant || viewedRef.current) return;
+    viewedRef.current = true;
+    recordStat(variant, "views");
+    trackEvent("experiment_view", {
+      experiment: EXPERIMENT_NAME,
+      article_id: articleId,
+      variant,
+    });
+  }, [variant, articleId]);
 
   useEffect(() => {
     return () => {
@@ -30,7 +69,7 @@ export default function ListenButton({ articleId }: { articleId: string }) {
   function fail(reason: string) {
     setMessage(reason);
     setStatus("error");
-    trackEvent("listen_error", { article_id: articleId, reason });
+    trackEvent("listen_error", { ...base, reason });
   }
 
   async function loadAudio(): Promise<HTMLAudioElement | null> {
@@ -57,7 +96,7 @@ export default function ListenButton({ articleId }: { articleId: string }) {
       audio.addEventListener("ended", () => {
         audio.currentTime = 0;
         setStatus("idle");
-        trackEvent("listen_complete", { article_id: articleId });
+        trackEvent("listen_complete", base);
       });
       audioRef.current = audio;
       return audio;
@@ -77,7 +116,7 @@ export default function ListenButton({ articleId }: { articleId: string }) {
       audio?.pause();
       setStatus("paused");
       trackEvent("listen_pause", {
-        article_id: articleId,
+        ...base,
         position_seconds: Math.round(audio?.currentTime ?? 0),
       });
       return;
@@ -86,7 +125,14 @@ export default function ListenButton({ articleId }: { articleId: string }) {
     // Resume after a pause is not a new listen, so it must not count as a click.
     // Otherwise one person could be counted as three clicks in the listen rate.
     const isResume = status === "paused";
-    if (!isResume) trackEvent("listen_click", { article_id: articleId });
+    if (!isResume) {
+      // The table counts a visit once, even if the person clicks again later.
+      if (variant && !clickedRef.current) {
+        clickedRef.current = true;
+        recordStat(variant, "clicks");
+      }
+      trackEvent("listen_click", base);
+    }
     const audio = await loadAudio();
     if (!audio) return;
 
@@ -95,16 +141,24 @@ export default function ListenButton({ articleId }: { articleId: string }) {
       setStatus("playing");
       if (isResume) {
         trackEvent("listen_resume", {
-          article_id: articleId,
+          ...base,
           position_seconds: Math.round(audio.currentTime),
         });
       } else {
-        trackEvent("listen_play", { article_id: articleId });
+        trackEvent("listen_play", base);
       }
     } catch {
       fail("The browser blocked audio playback.");
     }
   }
+
+  // The variant is only known in the browser. Until then we keep the space free,
+  // so the page does not jump and nobody sees the wrong button for a moment.
+  if (!variant) {
+    return <div className={styles.wrapper} aria-hidden="true" />;
+  }
+
+  const labels = getLabels(variant, minutes);
 
   return (
     <div className={styles.wrapper}>
@@ -119,7 +173,7 @@ export default function ListenButton({ articleId }: { articleId: string }) {
           {status === "playing" ? "❚❚" : "▶"}
         </span>
 
-        {LABELS[status]}
+        {labels[status]}
       </button>
 
       <p className={styles.message} role="status" aria-live="polite">

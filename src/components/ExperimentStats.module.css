@@ -1,0 +1,53 @@
+.panel {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: #f5f6f8;
+  border-radius: 12px;
+}
+
+.title {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.note {
+  margin: 0 0 1rem;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  padding: 0.4rem 0.5rem 0.4rem 0;
+  text-align: left;
+  border-top: 1px solid #e1e4e8;
+}
+
+.table thead th {
+  border-top: 0;
+  color: #666;
+  font-weight: 500;
+}
+
+.reset {
+  margin-top: 0.75rem;
+  padding: 0.3rem 0.8rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #333;
+  background: #fff;
+  border: 1px solid #c9ced6;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.reset:hover {
+  background: #eef0f3;
+}
