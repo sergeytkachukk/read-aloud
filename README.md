@@ -6,6 +6,12 @@ I wanted to build this the way a growth team would think about a new feature. It
 
 Stack is Next.js, React and TypeScript.
 
+Live demo https://read-aloud-demo.netlify.app/
+
+![The article page with the listen button](public/screenshots/page.png)
+
+![Tracked events and the A/B test table](public/screenshots/events-and-ab-test.png)
+
 ## How it works
 
 The browser sends only an article id to `/api/speech`. The server finds the article text, asks ElevenLabs for the audio and sends it back. The API key stays on the server and never reaches the browser.
